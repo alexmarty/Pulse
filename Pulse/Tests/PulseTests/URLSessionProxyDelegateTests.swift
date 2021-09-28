@@ -25,22 +25,28 @@ final class URLSessionProxyDelegateTests: XCTestCase {
 
     func testProxyDelegate() throws {
         // GIVEN
-        let myDelegate = MockSessionDelegate()
+        var myDelegate: MockSessionDelegate? = MockSessionDelegate()
         let delegate = URLSessionProxyDelegate(logger: logger, delegate: myDelegate)
         let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-
+  
         // WHEN
         let dataURL = try XCTUnwrap(Bundle.module.url(forResource: "logs-2021-03-18_21-22", withExtension: "pulse"))
         let dataTask = session.dataTask(with: dataURL)
 
         let didComplete = self.expectation(description: "TaskCompleted")
-        myDelegate.completion = { task, error in
+        myDelegate?.completion = { task, error in
             if task === dataTask {
                 XCTAssertNil(error)
                 didComplete.fulfill()
             }
         }
+
+        autoreleasepool {
+            myDelegate = nil // Make sure that proxy delegate retain the real one (like URLSession does)
+        }
+        
         dataTask.resume()
+        
         wait(for: [didComplete], timeout: 5)
 
         // RECORD
@@ -81,6 +87,28 @@ final class URLSessionProxyDelegateTests: XCTestCase {
         myDelegate.didBecomeInvalid = { error in
             didBecomeInvalid.fulfill()
         }
+        session.invalidateAndCancel()
+        wait(for: [didBecomeInvalid], timeout: 5)
+    }
+    
+    func testForwardingOfUnimplementedMethodWhenDelegateIsNotRetained() throws {
+        // GIVEN
+        // - proxy delegate doesn't implement a method
+        // - an actual delegate does
+        var myDelegate: MockSessionCustomMethodImplemented? = MockSessionCustomMethodImplemented()
+        let delegate = URLSessionProxyDelegate(logger: logger, delegate: myDelegate)
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+
+        // WHEN
+        // THEN method is forwarded to the actual delegate
+        let didBecomeInvalid = self.expectation(description: "didBecomeInvalid")
+        myDelegate?.didBecomeInvalid = { error in
+            didBecomeInvalid.fulfill()
+        }
+        autoreleasepool {
+            myDelegate = nil
+        }
+        
         session.invalidateAndCancel()
         wait(for: [didBecomeInvalid], timeout: 5)
     }
@@ -131,6 +159,7 @@ final class URLSessionProxyDelegateTests: XCTestCase {
 }
 
 private final class MockSessionDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
+    
     var completion: ((URLSessionTask, Error?) -> Void)?
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {

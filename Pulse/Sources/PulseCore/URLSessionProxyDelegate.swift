@@ -6,14 +6,14 @@ import Foundation
 
 /// Automates URLSession request tracking.
 public final class URLSessionProxyDelegate: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate {
-    private weak var actualDelegate: URLSessionDelegate?
-    private weak var taskDelegate: URLSessionTaskDelegate?
+    private var actualDelegate: URLSessionDelegate?
+    private var taskDelegate: URLSessionTaskDelegate?
     private let interceptedSelectors: Set<Selector>
     private let logger: NetworkLogger
 
     /// - parameter logger: By default, creates a logger with `LoggerStore.default`.
-    /// - parameter delegate: The "actual" session delegate.
-    public init(logger: NetworkLogger = .init(), delegate: URLSessionDelegate) {
+    /// - parameter delegate: The "actual" session delegate, strongly retained.
+    public init(logger: NetworkLogger = .init(), delegate: URLSessionDelegate?) {
         self.actualDelegate = delegate
         self.taskDelegate = delegate as? URLSessionTaskDelegate
         self.interceptedSelectors = [
@@ -24,7 +24,7 @@ public final class URLSessionProxyDelegate: NSObject, URLSessionTaskDelegate, UR
         ]
         self.logger = logger
     }
-
+    
     // MARK: URLSessionTaskDelegate
 
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -70,7 +70,7 @@ public final class URLSessionProxyDelegate: NSObject, URLSessionTaskDelegate, UR
 // MARK: - Automatic Registration
 
 private extension URLSession {
-    @objc class func pulse_init(configuration: URLSessionConfiguration, delegate: URLSessionDelegate, delegateQueue: OperationQueue?) -> URLSession {
+    @objc class func pulse_init(configuration: URLSessionConfiguration, delegate: URLSessionDelegate?, delegateQueue: OperationQueue?) -> URLSession {
         let delegate = URLSessionProxyDelegate(logger: sharedLogger, delegate: delegate)
         return self.pulse_init(configuration: configuration, delegate: delegate, delegateQueue: delegateQueue)
     }

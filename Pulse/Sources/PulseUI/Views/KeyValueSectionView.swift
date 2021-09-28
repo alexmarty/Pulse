@@ -24,9 +24,13 @@ struct KeyValueSectionView: View {
                     Button(action: action.action, label: {
                         Text(action.title)
                         Image(systemName: "chevron.right")
-                            .foregroundColor(.separator)
+                            .foregroundColor(Color.gray)
                             .font(.caption)
+                            .padding(.top, 2)
                     })
+                    .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
+                    .background(Color.secondaryFill)
+                    .cornerRadius(20)
                 }
                 #endif
             }
@@ -44,6 +48,7 @@ struct KeyValueSectionView: View {
                         .foregroundColor(.separator)
                         .font(.caption)
                 })
+ 
             }
 
             #else
@@ -51,7 +56,6 @@ struct KeyValueSectionView: View {
                 .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 0))
                 .border(width: 2, edges: [.leading], color: actualTintColor)
                 .padding(EdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 0))
-            Spacer()
             #endif
         }
     }
@@ -109,7 +113,7 @@ private struct KeyValueListView: View {
                 .lineLimit(nil)
             #else
             (title + value)
-                .lineLimit(nil)
+                .lineLimit(4)
                 .contextMenu(ContextMenu(menuItems: {
                     Button(action: {
                         UXPasteboard.general.string = "\(row.item.0): \(row.item.1 ?? "–")"

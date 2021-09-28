@@ -1,5 +1,52 @@
 # Pulse 0.x
 
+## Pulse 0.17.2
+
+*15 Sep, 2021*
+
+- Add Xcode 13 support - [#39](https://github.com/kean/Pulse/pull/39), thanks to [Jeffrey Macko](https://github.com/mackoj)
+
+## Pulse 0.17.1
+
+*13 Sep, 2021*
+
+- Add support to httpBodyStreamData - [#37](https://github.com/kean/Pulse/pull/37), thanks to [Klemen Košir](https://github.com/klemenkosir)
+- Fix an issue whre cURL share was using request body instead of the response body - [#38](https://github.com/kean/Pulse/pull/38), thanks to [BB9z](https://github.com/BB9z)
+
+## Pulse 0.17.0
+
+*11 Sep, 2021*
+
+- Add `storeRequest(_,response:error:data:metrics)` method to `LoggerStore`. It can be used if you just want to log the response without incremental updates. For incremental updates, use the existing `NetworkLogger` class instead.
+- Fix a crash occurring when you invalidate a `URLSession` that uses `URLSessionProxyDelegate` - [#36](https://github.com/kean/Pulse/issues/36)
+- Fix an issue where `URLSessionProxyDelegate` was not retaining the real delegate the way `URLSession` does
+- [iOS] Display a context menu with all available options (plain text, HTML, cURL) etc when pressing "Share" button in a network request details screen on iOS 14
+- [HTML export] Add soft-wrap for long header fields
+- [HTML export] Add proper overflow for response bodies
+- Automatically remove appearance overrides for navigation bar in MainViewController; some break SwiftUI layout (if you need to disable it, use isAutomaticAppearanceOverrideRemovalEnabled.isAutomaticAppearanceOverrideRemovalEnabled)
+- [iOS] Limit the size of text values in key-value sections to 4 lines
+- [iOS] Add a way to view raw error description
+- New icon for "Network"
+- Fix missing closing parentheses in error description in an error section
+
+## Pulse 0.16.1
+
+*24 Aug, 2021*
+
+- Fix an issue with 0 and 1 being printed as Boolean values by the JSON printer – [#34](https://github.com/kean/Pulse/pull/34), thanks to [Abdula Magomedov](https://github.com/abdula571) 
+
+## Pulse 0.16.0
+
+*21 Aug, 2021*
+
+- Fix crash with URLSession automatic session registration - [#31](https://github.com/kean/Pulse/pull/31), thanks to [Ivan Lisovyi](https://github.com/ivanlisovyi) 
+- `ConsoleView`, `NetworkView`, and `PinsView` are no longer wrapped into `NavigationView` by default. It gives you more integration options. For example, you can now push a `ConsoleView` into your own `UINavigationControllers` (or `NavigationViews`).
+- Add `onDismiss` parameter to `MainViewController` and `MainView` to show a close button
+- Make `PinsView` initializer public
+- Make Pulse compatible with earlier Xcode versions (at least down to Xcode 12.4)
+- [iOS] Add a "Remove Messages" button directly to the console
+- Remove `date` parameter from `storeMessage` (`LoggerStore`) and add default parameters for file, function
+
 ## Pulse 0.15.3
 
 *7 Jul, 2021*
