@@ -199,31 +199,46 @@ public final class LoggerStore {
 
 extension LoggerStore {
     /// Stores the given message.
-    public func storeMessage(date: Date? = nil, label: String, level: Level, message: String, metadata: [String: MetadataValue]?, file: String, function: String, line: UInt) {
+    public func storeMessage(label: String, level: Level, message: String, metadata: [String: MetadataValue]?, file: String = #file, function: String = #function, line: UInt = #line) {
         let context = backgroundContext
-        let date = date ?? makeCurrentDate()
+        let date = makeCurrentDate()
         context.perform {
             self.makeMessageEntity(createdAt: date, label: label, level: level, message: message, metadata: metadata, file: file, function: function, line: line)
             try? context.save()
         }
     }
+    
+    /// Stores the completed network request.
+    ///
+    /// - note: If you want to store incremental updates to the task, use
+    /// `NetworkLogger` instead.
+    public func storeRequest(_ request: URLRequest, response: URLResponse?, error: Error?, data: Data?, metrics: URLSessionTaskMetrics? = nil) {
+        let context = NetworkLogger.TaskContext()
+        context.request = request
+        context.response = response
+        context.error = error
+        context.data = data ?? Data()
+        context.metrics = metrics.map(NetworkLoggerMetrics.init)
+        
+        storeNetworkRequest(context)
+    }
 
-    func storeNetworkRequest(for task: URLSessionTask, error: Error?, context: NetworkLogger.TaskContext) {
+    func storeNetworkRequest(_ context: NetworkLogger.TaskContext) {
         let date = makeCurrentDate()
         backgroundContext.perform {
-            self.storeNetworkRequest(for: task, error: error, context: context, date: date)
+            self.storeNetworkRequest(context, date: date)
             try? self.backgroundContext.save()
         }
     }
 
-    private func storeNetworkRequest(for task: URLSessionTask, error: Error?, context: NetworkLogger.TaskContext, date: Date) {
-        guard let urlRequest = task.originalRequest else { return }
+    private func storeNetworkRequest(_ context: NetworkLogger.TaskContext, date: Date) {
+        guard let urlRequest = context.request else { return }
 
         let summary = NetworkLoggerRequestSummary(
             request: NetworkLoggerRequest(urlRequest: urlRequest),
             response: context.response.map(NetworkLoggerResponse.init),
-            error: error.map(NetworkLoggerError.init),
-            requestBody: urlRequest.httpBody,
+            error: context.error.map(NetworkLoggerError.init),
+			requestBody: urlRequest.httpBody ?? urlRequest.httpBodyStreamData(),
             responseBody: context.data,
             metrics: context.metrics
         )
@@ -231,7 +246,7 @@ extension LoggerStore {
         let level: LoggerStore.Level
         let url = urlRequest.url?.absoluteString
         var message = "\(urlRequest.httpMethod ?? "–") \(url ?? "–")"
-        if let error = error {
+        if let error = context.error {
             level = .error
             message += " \((error as NSError).code) \(error.localizedDescription)"
         } else {
@@ -535,4 +550,33 @@ public enum LoggerStoreError: Error, LocalizedError {
         case .unknownError: return "Unexpected error"
         }
     }
+}
+
+
+fileprivate extension URLRequest {
+	
+	func httpBodyStreamData() -> Data? {
+		guard let bodyStream = self.httpBodyStream else {
+			return nil
+		}
+		
+		// Will read 16 chars per iteration. Can use bigger buffer if needed
+		let bufferSize: Int = 16
+		let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+
+		bodyStream.open()
+		defer {
+			buffer.deallocate()
+			bodyStream.close()
+		}
+		
+		var bodyStreamData = Data()
+		
+		while bodyStream.hasBytesAvailable {
+			let readData = bodyStream.read(buffer, maxLength: bufferSize)
+			bodyStreamData.append(buffer, count: readData)
+		}
+		
+		return bodyStreamData
+	}
 }

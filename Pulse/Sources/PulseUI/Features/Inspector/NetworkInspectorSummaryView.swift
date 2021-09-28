@@ -68,6 +68,12 @@ struct NetworkInspectorSummaryView: View {
 
     private var linksView: some View {
         VStack {
+            if let errorModel = model.errorModel {
+                NavigationLink(destination: NetworkHeadersDetailsView(model: errorModel), isActive: $model.isErrorRawActive) {
+                    Text("")
+                }
+            }
+            
             NavigationLink(destination: NetworkInspectorResponseView(model: model.requestBodyViewModel), isActive: $model.isRequestRawActive) {
                 Text("")
             }
@@ -100,6 +106,7 @@ struct NetworkInspectorSummaryView: View {
 final class NetworkInspectorSummaryViewModel: ObservableObject {
     private let summary: NetworkLoggerSummary
 
+    @Published var isErrorRawActive = false
     @Published var isRequestRawActive = false
     @Published var isResponseRawActive = false
 
@@ -142,6 +149,10 @@ final class NetworkInspectorSummaryViewModel: ObservableObject {
         return KeyValueSectionViewModel(
             title: "Error",
             color: .red,
+            action: ActionViewModel(
+                action: { [unowned self] in isErrorRawActive = true },
+                title: "View"
+            ),
             items: [
                 ("Domain", error.domain),
                 ("Code", descriptionForError(domain: error.domain, code: error.code)),
@@ -159,7 +170,7 @@ final class NetworkInspectorSummaryViewModel: ObservableObject {
             color: .blue,
             action: ActionViewModel(
                 action: { [unowned self] in isRequestRawActive = true },
-                title: "View Raw"
+                title: "View"
             ),
             items: [
                 ("Content-Type", contentType),
@@ -178,7 +189,7 @@ final class NetworkInspectorSummaryViewModel: ObservableObject {
             color: .indigo,
             action: ActionViewModel(
                 action: { [unowned self] in isResponseRawActive = true },
-                title: "View Raw"
+                title: "View"
             ),
             items: [
                 ("Content-Type", contentType),

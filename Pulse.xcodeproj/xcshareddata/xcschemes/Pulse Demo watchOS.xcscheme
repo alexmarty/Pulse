@@ -30,7 +30,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "0C57AD4C245F0EFB005B3400"
                BuildableName = "Pulse iOS.app"
-               BlueprintName = "Pulse iOS"
+               BlueprintName = "Pulse App iOS"
                ReferencedContainer = "container:Pulse.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
